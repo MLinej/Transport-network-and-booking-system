@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Transport Network — Final</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+        }
+
+        .glass {
+            background: rgba(30, 42, 59, 0.55);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(48, 62, 85, 0.2);
+        }
+
+        .menu-btn {
+            background: #1a222c;
+            color: #c9d1d9;
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: 1px solid #2f3e53;
+            font-weight: 600;
+        }
+
+        .menu-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .btn-blue {
+            background: #58a6ff;
+            color: white;
+            padding: 10px;
+            border-radius: 10px
+        }
+
+        .btn-green {
+            background: #2ecc71;
+            color: white;
+            padding: 10px;
+            border-radius: 10px
+        }
+
+        .btn-red {
+            background: #ef4444;
+            color: white;
+            padding: 10px;
+            border-radius: 10px
+        }
+
+        input,
+        select {
+            background: #161b22;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            padding: 10px;
+            border-radius: 10px
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status.success {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .status.error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .list-card {
+            background: #07111a;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        table.min {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+
+        table.min thead tr {
+            background: #111827;
+            color: #9aa3ae;
+        }
+
+        table.min td,
+        table.min th {
+            padding: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="max-w-4xl mx-auto p-6">
+        <div class="glass rounded-3xl p-8 shadow-xl">
+            <h1 class="text-3xl font-bold text-white text-center mb-6">Transport Network & Booking — Final</h1>
+
+            <div class="flex flex-wrap justify-center gap-3 mb-6">
+                <button data-target="routes" class="menu-btn">Routes</button>
+                <button data-target="path" class="menu-btn">Shortest Path</button>
+                <button data-target="book" class="menu-btn">Book Ticket</button>
+                <button data-target="bookings" class="menu-btn">Show Bookings</button>
+                <button data-target="seats" class="menu-btn">Seats</button>
+                <button data-target="admin" class="menu-btn">Admin</button>
+            </div>
+
+            <div id="routes" class="content-section">
+                <h2 class="text-xl font-semibold text-white mb-3">Available Routes (inbuilt)</h2>
+                <div class="overflow-x-auto">
+                    <table class="min text-left">
+                        <thead>
+                            <tr>
+                                <th>Station</th>
+                                <th>Neighbors (distance)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="routes-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="path" class="content-section hidden mt-4">
+                <h2 class="text-xl font-semibold text-white mb-3">Find Shortest Path & All Alternatives</h2>
+                <form id="path-form" class="space-y-3">
+                    <div><label class="block mb-1">Source</label><select id="src-path" required></select></div>
+                    <div><label class="block mb-1">Destination</label><select id="dest-path" required></select></div>
+                    <div class="flex gap-2">
+                        <button class="btn-blue" type="submit">Find Path</button>
+                        <button class="btn-red" id="clear-paths" type="button">Clear</button>
+                    </div>
+                </form>
+
+                <div id="path-result" class="status mt-3"></div>
+                <div id="all-paths-list"></div>
+            </div>
+
+            <div id="book" class="content-section hidden mt-4">
+                <h2 class="text-xl font-semibold text-white mb-3">Book Ticket</h2>
+                <form id="booking-form" class="space-y-3">
+                    <input id="passenger-name" placeholder="Passenger name" required />
+                    <select id="src-booking" required></select>
+                    <select id="dest-booking" required></select>
+                    <button class="btn-green w-full" type="submit">Book Ticket</button>
+                </form>
+                <div id="booking-result" class="status mt-3"></div>
+            </div>
+
+            <div id="bookings" class="content-section hidden mt-4">
+                <h2 class="text-xl font-semibold text-white mb-3">Bookings</h2>
+                <div id="bookings-list"></div>
+            </div>
+
+            <div id="seats" class="content-section hidden mt-4">
+                <h2 class="text-xl font-semibold text-white mb-3">Seats</h2>
+                <div id="seats-list"></div>
+            </div>
+
+            <div id="admin" class="content-section hidden mt-4">
+                <h2 class="text-xl font-semibold text-white mb-3">Admin — Add Route</h2>
+                <form id="add-route-form" class="space-y-3">
+                    <input id="new-route-src" placeholder="Source (e.g. AHMEDABAD)" required />
+                    <input id="new-route-dest" placeholder="Destination (e.g. MUMBAI)" required />
+                    <input id="new-route-dist" type="number" placeholder="Distance (km)" required />
+                    <input id="new-route-seats" type="number" placeholder="Seats" required />
+                    <button class="btn-red w-full" type="submit">Add Route</button>
+                </form>
+                <div id="admin-result" class="status mt-3"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+
+        const STORAGE_KEYS = { EDGES: 'tn_edges', SEATS: 'tn_seats', BOOKINGS: 'tn_bookings', TICKET: 'tn_ticket_ctr' };
+
+        class Graph {
+            constructor() { this.adj = new Map(); }
+            addEdge(u, v, w) {
+                if (!u || !v) return;
+                if (!this.adj.has(u)) this.adj.set(u, []);
+                if (!this.adj.has(v)) this.adj.set(v, []);
+                if (!this.adj.get(u).some(n => n.station === v)) this.adj.get(u).push({ station: v, distance: w });
+                if (!this.adj.get(v).some(n => n.station === u)) this.adj.get(v).push({ station: u, distance: w });
+            }
+            clear() { this.adj = new Map(); }
+            displayRoutes() {
+                if (this.adj.size === 0) preloadDemoIfEmpty();
+                const body = document.getElementById('routes-body');
+                body.innerHTML = '';
+                Array.from(this.adj.keys()).sort().forEach(st => {
+                    const neighbors = this.adj.get(st) || [];
+                    const tr = document.createElement('tr');
+                    const td1 = document.createElement('td'); td1.textContent = st; td1.style.fontWeight = '600';
+                    const td2 = document.createElement('td'); td2.textContent = neighbors.map(n => `(${n.station}, ${n.distance} km)`).join(' ');
+                    tr.appendChild(td1); tr.appendChild(td2); body.appendChild(tr);
+                });
+            }
+            getEdgeWeight(u, v) { const n = this.adj.get(u) || []; const f = n.find(x => x.station === v); return f ? f.distance : Infinity; }
+
+            // Dijkstra
+            shortestPath(src, dest) {
+                if (!this.adj.has(src) || !this.adj.has(dest)) return { distance: Infinity, path: [] };
+                const dist = new Map(); const parent = new Map();
+                this.adj.forEach((_, k) => dist.set(k, Infinity));
+                dist.set(src, 0);
+                const pq = [{ station: src, d: 0 }];
+                while (pq.length) {
+                    pq.sort((a, b) => a.d - b.d);
+                    const { station: u, d } = pq.shift();
+                    if (d > dist.get(u)) continue;
+                    if (u === dest) break;
+                    for (const { station: v, distance: w } of this.adj.get(u) || []) {
+                        const nd = dist.get(u) + w;
+                        if (nd < dist.get(v)) { dist.set(v, nd); parent.set(v, u); pq.push({ station: v, d: nd }); }
+                    }
+                }
+                if (dist.get(dest) === Infinity) return { distance: Infinity, path: [] };
+                const path = []; let cur = dest;
+                while (cur !== src) { path.unshift(cur); if (!parent.has(cur)) break; cur = parent.get(cur); }
+                path.unshift(src);
+                return { distance: dist.get(dest), path };
+            }
+
+            findAllPaths(src, dest, maxPaths = 5000) {
+                const res = []; const visited = new Set(); const stack = [];
+                const dfs = (u, acc) => {
+                    if (res.length >= maxPaths) return;
+                    if (u === dest) { res.push({ path: [...stack, u], distance: acc }); return; }
+                    visited.add(u);
+                    for (const { station: v, distance: w } of this.adj.get(u) || []) {
+                        if (visited.has(v)) continue;
+                        stack.push(u);
+                        dfs(v, acc + w);
+                        stack.pop();
+                    }
+                    visited.delete(u);
+                };
+                dfs(src, 0);
+                return res;
+            }
+        }
+
+        class BookingSystem {
+            constructor() { this.ticketCounter = 1; this.seats = new Map(); this.booked = []; }
+            loadFromStorage(edges, seatsObj, bookings, ticketCtr) {
+                this.seats = new Map();
+                if (seatsObj) Object.keys(seatsObj).forEach(k => this.seats.set(k, seatsObj[k]));
+                this.booked = bookings || [];
+                this.ticketCounter = ticketCtr || 1;
+            }
+            toStorageObjects() { const o = {}; this.seats.forEach((v, k) => o[k] = v); return { seatsObj: o, bookingsArr: this.booked, ticketCtr: this.ticketCounter }; }
+            addRoute(src, dest, seatCount) { this.seats.set(`${src}-${dest}`, seatCount); }
+            addSeats(src, dest, count) { const k = `${src}-${dest}`; if (this.seats.has(k)) { this.seats.set(k, this.seats.get(k) + count); return true; } return false; }
+            bookTicket(name, src, dest) {
+                const k = `${src}-${dest}`;
+                if (!this.seats.has(k) || this.seats.get(k) <= 0) return { success: false, message: `❌ No seats available from ${src} to ${dest}.` };
+                this.seats.set(k, this.seats.get(k) - 1);
+                const t = { id: this.ticketCounter, passenger: name, source: src, destination: dest };
+                this.booked.push(t); this.ticketCounter++;
+                return { success: true, message: `✅ Ticket booked! ID: ${t.id}`, ticket: t };
+            }
+            cancelBookingById(id) {
+                const idx = this.booked.findIndex(t => t.id === id); if (idx === -1) return false;
+                const ticket = this.booked.splice(idx, 1)[0]; const key = `${ticket.source}-${ticket.destination}`;
+                this.seats.set(key, (this.seats.get(key) || 0) + 1); return true;
+            }
+            showBookings() {
+                const c = document.getElementById('bookings-list'); c.innerHTML = '';
+                if (this.booked.length === 0) { c.innerHTML = '<p class="text-gray-400">No tickets booked yet.</p>'; return; }
+                let html = '<table class="min"><thead><tr><th>ID</th><th>Passenger</th><th>From -> To</th><th>Action</th></tr></thead><tbody>';
+                this.booked.forEach(t => { html += `<tr><td>${t.id}</td><td>${t.passenger}</td><td>${t.source} -> ${t.destination}</td><td><button data-id="${t.id}" class="btn-red cancel-btn">Cancel</button></td></tr>`; });
+                html += '</tbody></table>'; c.innerHTML = html;
+                c.querySelectorAll('.cancel-btn').forEach(b => b.addEventListener('click', e => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
+                    if (confirm('Cancel booking?')) { const ok = bookingSystem.cancelBookingById(id); if (ok) { saveAllToLocalStorage(); renderAfterDataChange(); alert('Cancelled'); } else alert('Failed to cancel'); }
+                }));
+            }
+            showAvailableSeats() {
+                const el = document.getElementById('seats-list'); el.innerHTML = '';
+                if (this.seats.size === 0) { el.innerHTML = '<p class="text-gray-400">No routes defined.</p>'; return; }
+                Array.from(this.seats.entries()).sort().forEach(([route, count]) => {
+                    const div = document.createElement('div'); div.className = 'list-card';
+                    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:600">${route.replace('-', ' → ')}</div><div style="font-weight:700">${count} seats</div></div>`;
+                    el.appendChild(div);
+                });
+            }
+        }
+
+        const graph = new Graph();
+        const bookingSystem = new BookingSystem();
+
+        function readJSON(key, fallback) { try { const v = localStorage.getItem(key); if (!v) return fallback; return JSON.parse(v); } catch (e) { return fallback; } }
+        function writeJSON(key, obj) { try { localStorage.setItem(key, JSON.stringify(obj)); } catch (e) { } }
+
+        function saveAllToLocalStorage() {
+            const edges = [];
+            graph.adj.forEach((neighbors, station) => {
+                neighbors.forEach(n => {
+                    const u = station, v = n.station;
+                    const key = [u, v].sort().join('|');
+                    if (!edges.some(e => e.key === key)) edges.push({ src: u, dest: v, dist: n.distance, key });
+                });
+            });
+            const edgesToSave = edges.map(e => ({ src: e.src, dest: e.dest, dist: e.dist }));
+            writeJSON(STORAGE_KEYS.EDGES, edgesToSave);
+            const { seatsObj, bookingsArr, ticketCtr } = bookingSystem.toStorageObjects();
+            writeJSON(STORAGE_KEYS.SEATS, seatsObj);
+            writeJSON(STORAGE_KEYS.BOOKINGS, bookingsArr);
+            writeJSON(STORAGE_KEYS.TICKET, ticketCtr);
+        }
+
+        function loadAllFromLocalStorage() {
+            const edges = readJSON(STORAGE_KEYS.EDGES, null);
+            const seatsObj = readJSON(STORAGE_KEYS.SEATS, null);
+            const bookingsArr = readJSON(STORAGE_KEYS.BOOKINGS, null);
+            const ticketCtr = readJSON(STORAGE_KEYS.TICKET, null);
+            graph.clear();
+            if (edges && Array.isArray(edges)) edges.forEach(({ src, dest, dist }) => graph.addEdge(src, dest, dist));
+            bookingSystem.loadFromStorage(edges || [], seatsObj || {}, bookingsArr || [], ticketCtr || 1);
+        }
+
+        function preloadDemoIfEmpty() {
+            const edges = readJSON(STORAGE_KEYS.EDGES, null);
+            if (!edges || edges.length === 0) {
+                const demoEdges = [
+                    // AHMEDABAD <-> MUMBAI alternatives
+                    { src: 'AHMEDABAD', dest: 'MUMBAI', dist: 540 }, // direct shortest in our fake dataset
+                    { src: 'AHMEDABAD', dest: 'PUNE', dist: 550 },
+                    { src: 'PUNE', dest: 'MUMBAI', dist: 150 },
+                    { src: 'AHMEDABAD', dest: 'UDAIPUR', dist: 260 },
+                    { src: 'UDAIPUR', dest: 'MUMBAI', dist: 440 }, // AHM-UDR-MUM ~700
+                    { src: 'AHMEDABAD', dest: 'SURAT', dist: 260 },
+                    { src: 'SURAT', dest: 'MUMBAI', dist: 280 }, // AHM-SUR-MUM ~540
+                    { src: 'AHMEDABAD', dest: 'RAJKOT', dist: 215 },
+                    { src: 'RAJKOT', dest: 'MUMBAI', dist: 480 }, // AHM-RAJ-MUM ~695
+                    { src: 'AHMEDABAD', dest: 'VADODARA', dist: 110 },
+                    { src: 'VADODARA', dest: 'MUMBAI', dist: 420 },
+                    // Mumbai <-> Delhi alternatives/midpoints
+                    { src: 'MUMBAI', dest: 'NAGPUR', dist: 810 },
+                    { src: 'NAGPUR', dest: 'DELHI', dist: 1100 }, // MUM-NAG-DEL ~1910
+                    { src: 'MUMBAI', dest: 'PUNE', dist: 150 },
+                    { src: 'PUNE', dest: 'NAGPUR', dist: 900 },
+                    { src: 'MUMBAI', dest: 'DELHI', dist: 1400 },
+                    // Jaipur / Udaipur
+                    { src: 'DELHI', dest: 'JAIPUR', dist: 280 },
+                    { src: 'JAIPUR', dest: 'UDAIPUR', dist: 390 },
+                    // other
+                    { src: 'SURAT', dest: 'PUNE', dist: 620 },
+                    { src: 'VADODARA', dest: 'SURAT', dist: 150 },
+                    { src: 'RAJKOT', dest: 'SURAT', dist: 430 }
+                ];
+                const demoSeats = {};
+                demoEdges.forEach(e => {
+                    demoSeats[`${e.src}-${e.dest}`] = 12;
+                    demoSeats[`${e.dest}-${e.src}`] = 12;
+                });
+                writeJSON(STORAGE_KEYS.EDGES, demoEdges);
+                writeJSON(STORAGE_KEYS.SEATS, demoSeats);
+                writeJSON(STORAGE_KEYS.BOOKINGS, []);
+                writeJSON(STORAGE_KEYS.TICKET, 1);
+                // load immediately
+                loadAllFromLocalStorage();
+            }
+        }
+
+        const menuBtns = document.querySelectorAll('.menu-btn');
+        const contentSections = document.querySelectorAll('.content-section');
+        function showSection(id) {
+            contentSections.forEach(s => s.classList.add('hidden'));
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+            if (id === 'routes') graph.displayRoutes();
+            if (id === 'bookings') bookingSystem.showBookings();
+            if (id === 'seats') bookingSystem.showAvailableSeats();
+            populateStationSelects();
+        }
+        menuBtns.forEach(b => b.addEventListener('click', () => { const t = b.getAttribute('data-target'); showSection(t); }));
+
+        function populateStationSelects() {
+            const selects = document.querySelectorAll('#path-form select, #booking-form select');
+            const names = Array.from(graph.adj.keys()).sort();
+            selects.forEach(s => {
+                s.innerHTML = '<option value="" disabled selected>Select a station...</option>';
+                names.forEach(n => {
+                    const o = document.createElement('option'); o.value = n; o.textContent = n; s.appendChild(o);
+                });
+            });
+        }
+
+        document.getElementById('path-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const src = document.getElementById('src-path').value;
+            const dest = document.getElementById('dest-path').value;
+            const resultDiv = document.getElementById('path-result');
+            const allDiv = document.getElementById('all-paths-list');
+            allDiv.innerHTML = '';
+            if (!src || !dest) { resultDiv.textContent = '❌ Select both source and destination.'; resultDiv.className = 'status error'; return; }
+
+            const allPaths = graph.findAllPaths(src, dest, 5000);
+            // Dijkstra authoritative shortest
+            const dijk = graph.shortestPath(src, dest);
+
+            if (allPaths && allPaths.length > 0) {
+                allPaths.sort((a, b) => a.distance - b.distance);
+                resultDiv.innerHTML = `✅ Shortest (Dijkstra): ${dijk.distance} km<br>Path: ${dijk.path.join(' → ')}`;
+                resultDiv.className = 'status success';
+                // show top 20 alternatives
+                let html = '<div class="list-card"><h3 style="font-weight:700">All simple paths (top 20 sorted by distance)</h3><ol style="margin-left:1rem;margin-top:8px">';
+                allPaths.slice(0, 20).forEach((p, i) => {
+                    html += `<li style="margin-bottom:8px;"><div style="padding:8px;border-radius:8px;${i === 0 ? 'border:1px solid #22c55e' : ''}"><div style="font-weight:700">${p.distance} km</div><div style="color:#9aa3ae">${p.path.join(' → ')}</div></div></li>`;
+                });
+                html += '</ol></div>';
+                allDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = `ℹ️ No direct simple path from ${src} to ${dest}. Generating composed suggestions...`;
+                resultDiv.className = 'status';
+                const suggestions = [];
+                const nodes = Array.from(graph.adj.keys());
+                nodes.forEach(mid => {
+                    if (mid === src || mid === dest) return;
+                    const p1 = graph.findAllPaths(src, mid, 50);
+                    const p2 = graph.findAllPaths(mid, dest, 50);
+                    if (p1.length > 0 && p2.length > 0) {
+                        p1.sort((a, b) => a.distance - b.distance);
+                        p2.sort((a, b) => a.distance - b.distance);
+                        const combined = p1[0].path.concat(p2[0].path.slice(1));
+                        suggestions.push({ via: mid, path: combined, distance: p1[0].distance + p2[0].distance });
+                    }
+                });
+                if (suggestions.length === 0) {
+                    for (let a of nodes) {
+                        if (a === src || a === dest) continue;
+                        for (let b of nodes) {
+                            if (b === src || b === dest || b === a) continue;
+                            const p1 = graph.findAllPaths(src, a, 20);
+                            const p2 = graph.findAllPaths(a, b, 20);
+                            const p3 = graph.findAllPaths(b, dest, 20);
+                            if (p1.length && p2.length && p3.length) {
+                                p1.sort((x, y) => x.distance - y.distance); p2.sort((x, y) => x.distance - y.distance); p3.sort((x, y) => x.distance - y.distance);
+                                const combined = p1[0].path.concat(p2[0].path.slice(1)).concat(p3[0].path.slice(1));
+                                const dist = p1[0].distance + p2[0].distance + p3[0].distance;
+                                suggestions.push({ via: `${a}, ${b}`, path: combined, distance: dist });
+                            }
+                            if (suggestions.length > 0) break;
+                        }
+                        if (suggestions.length > 0) break;
+                    }
+                }
+                if (suggestions.length === 0) {
+                    allDiv.innerHTML = '<div class="list-card"><p class="text-gray-400">No composed suggestions found.</p></div>';
+                } else {
+                    suggestions.sort((a, b) => a.distance - b.distance);
+                    let html = '<div class="list-card"><h3 style="font-weight:700">Suggested composed routes</h3><ol style="margin-left:1rem;margin-top:8px">';
+                    suggestions.slice(0, 10).forEach(s => {
+                        html += `<li style="margin-bottom:8px;"><div style="padding:8px;border-radius:8px"><div style="font-weight:700">${s.distance} km — via ${s.via}</div><div style="color:#9aa3ae">${s.path.join(' → ')}</div></div></li>`;
+                    });
+                    html += '</ol></div>';
+                    allDiv.innerHTML = html;
+                }
+            }
+        });
+
+        document.getElementById('clear-paths').addEventListener('click', () => {
+            document.getElementById('path-result').innerHTML = '';
+            document.getElementById('all-paths-list').innerHTML = '';
+            document.getElementById('path-result').className = '';
+        });
+
+        document.getElementById('booking-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('passenger-name').value.trim();
+            const src = document.getElementById('src-booking').value;
+            const dest = document.getElementById('dest-booking').value;
+            const out = document.getElementById('booking-result');
+            if (!name || !src || !dest) { out.textContent = '❌ Fill fields'; out.className = 'status error'; return; }
+            const res = bookingSystem.bookTicket(name, src, dest);
+            out.textContent = res.message; out.className = res.success ? 'status success' : 'status error';
+            if (res.success) { document.getElementById('passenger-name').value = ''; saveAllToLocalStorage(); renderAfterDataChange(); }
+        });
+
+        document.getElementById('add-route-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const s = document.getElementById('new-route-src').value.trim().toUpperCase();
+            const d = document.getElementById('new-route-dest').value.trim().toUpperCase();
+            const dist = parseInt(document.getElementById('new-route-dist').value);
+            const seats = parseInt(document.getElementById('new-route-seats').value);
+            const resEl = document.getElementById('admin-result');
+            if (!s || !d || isNaN(dist) || isNaN(seats)) { resEl.textContent = '❌ Invalid values'; resEl.className = 'status error'; return; }
+            graph.addEdge(s, d, dist);
+            bookingSystem.seats.set(`${s}-${d}`, seats);
+            bookingSystem.seats.set(`${d}-${s}`, seats);
+            resEl.textContent = `✅ Added ${s} - ${d} (${dist} km)`; resEl.className = 'status success';
+            e.target.reset();
+            saveAllToLocalStorage(); renderAfterDataChange();
+        });
+
+        function renderAfterDataChange() { graph.displayRoutes(); bookingSystem.showAvailableSeats(); bookingSystem.showBookings(); populateStationSelects(); }
+
+        (function init() {
+            preloadDemoIfEmpty(); loadAllFromLocalStorage();
+            if (graph.adj.size === 0) {
+                const seatsObj = readJSON(STORAGE_KEYS.SEATS, null);
+                if (seatsObj) {
+                    Object.keys(seatsObj).forEach(k => {
+                        const [a, b] = k.split('-'); if (a && b && (!graph.adj.has(a) || !graph.adj.get(a).some(n => n.station === b))) graph.addEdge(a, b, 1);
+                    });
+                }
+            }
+            renderAfterDataChange();
+            showSection('routes');
+        })();
+    </script>
+</body>
+
+</html>
